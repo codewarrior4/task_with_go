@@ -32,6 +32,7 @@ func Seed() {
 		}
 		log.Println("User seeded successfully!")
 	} else {
+		user = existingUser // Assign the existing user to user
 		log.Println("User already exists, skipping seed.")
 	}
 
