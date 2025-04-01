@@ -13,7 +13,7 @@ func SetupAuthRoutes(app *fiber.App) {
 	auth := api.Group("/auth")
 
 	// Apply different rate limits to different routes
-	auth.Post("/register", middlewares.RateLimiter(1), handlers.Register)         // 10 requests per 1 min
+	auth.Post("/register", middlewares.RateLimiter(10), handlers.Register)         // 10 requests per 1 min
 	auth.Post("/login", middlewares.RateLimiter(2), handlers.Login)               // 10 requests per 2 min
 	auth.Post("/forgot-password", middlewares.RateLimiter(5), handlers.ForgotPassword) // 10 requests per 5 min
 	auth.Post("/reset-password", middlewares.RateLimiter(5), handlers.ResetPassword)

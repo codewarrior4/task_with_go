@@ -38,7 +38,7 @@ func main() {
 	routes.SetupRoutes(app)
 
 	// Start the server
-	if err := app.Listen(":3000"); err != nil {
+	if err := app.Listen(":4020"); err != nil {
 		log.Fatal(err)
 	}
 }
