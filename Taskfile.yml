@@ -3,8 +3,8 @@ version: "3"
 tasks:
   dev:
     cmds:
-      - echo "Checking if port 4020 is in use..."
-      - cmd /c "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :4020') do taskkill /PID %a /F" || echo "No process using port 4020"
+      - echo "Checking if port 4021 is in use..."
+      - cmd /c "for /f \"tokens=5\" %a in ('netstat -ano ^| findstr :4021') do taskkill /PID %a /F" || echo "No process using port 4021"
       - echo "Starting Fiber server..."
       - go run main.go
     sources:
