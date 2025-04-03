@@ -1,12 +1,14 @@
 package handlers
 
 import (
-
-	"github.com/gofiber/fiber/v2"
 	"task/auth"
 	"task/config"
 	"task/models"
 	"task/utils"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func Register(c *fiber.Ctx) error {
@@ -48,6 +50,31 @@ func Register(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to create user", err.Error())
 	}
 
+	// generate verification code
+	verificationCode := utils.GenerateVerificationCode()
+	verification :=models.Verification{
+		UserID:    user.ID,
+		Code:      verificationCode,
+		ExpiresAt: time.Now().Add(60 * time.Minute),
+	}
+
+	if err := config.DB.Create(&verification).Error; err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to create verification code", err.Error())
+	}
+
+	// Send verification email
+	go func () {
+		subject := "Email Verification"
+		message := []string{
+			"Hello " + user.Firstname + ",",
+			"Please use the following code to verify your email: " + verificationCode,
+			"If you did not request this verification, please ignore this email.",
+			"Best Regards,\nThe Team",
+		}
+		utils.SendEmail(user.Email, subject, message)
+	}()
+	
+
 	// Generate JWT token
 	token, err := auth.GenerateJWT(user.ID) // Pass user.ID (which is uint)
 	if err != nil {
@@ -83,7 +110,84 @@ func Register(c *fiber.Ctx) error {
 }
 
 func Login(c *fiber.Ctx) error {
-	return c.JSON(fiber.Map{"message": "Login endpoint"})
+
+	type LoginInput struct {
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required"`
+	}
+
+	var input LoginInput
+
+	// parse request body
+	if err := c.BodyParser(&input); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Failed to parse request body", err.Error())
+	}
+
+	// validate Input
+	if err := utils.ValidateStruct(input); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid input", err) // Directly return `err`
+	}
+
+	// check if user exists
+	var user models.User
+	if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Invalid credentials", nil)
+	}
+
+	// check if password is correct
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Password is incrrect", nil)	
+	}
+
+	// check if user is email verified
+	if !user.IsVerified {
+		
+		// generate verification code
+		verificationCode := utils.GenerateVerificationCode()
+		verification :=models.Verification{
+			UserID:    user.ID,
+			Code:      verificationCode,
+			ExpiresAt: time.Now().Add(60 * time.Minute),
+		}
+
+		if err := config.DB.Create(&verification).Error; err != nil {
+			return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to create verification code", err.Error())
+		}
+
+		// Send verification email
+		go func () {
+			subject := "Email Verification"
+			message := []string{
+				"Hello " + user.Firstname + ",",
+				"Please use the following code to verify your email: " + verificationCode,
+				"If you did not request this verification, please ignore this email.",
+				"Best Regards,\nThe Team",
+			}
+			utils.SendEmail(user.Email, subject, message)
+		}()
+
+		return utils.ErrorResponse(c, fiber.StatusUnauthorized, "Email not verified", nil)
+	}
+
+	// generate jwt token
+	token, err := auth.GenerateJWT(user.ID)
+
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to create token", err.Error())
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusOK, "Login successful", fiber.Map{
+		"user": fiber.Map{
+			"id":        user.ID,
+			"username":  user.Username,
+			"firstname": user.Firstname,
+			"lastname":  user.Lastname,
+			"email":     user.Email,
+		},
+		"token": token,
+		"tasks": user.Tasks,
+	})
+
 }
 
 func ForgotPassword(c *fiber.Ctx) error {

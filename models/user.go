@@ -15,6 +15,7 @@ type User struct {
 	Lastname string `gorm:"not null"`
 	Email    string `gorm:"unique;not null"`
 	Password string `gorm:"not null"`
+	IsVerified bool `gorm:"default:false" json:"is_verified"`
 	Tasks    []Task `gorm:"foreignKey:UserID"` // One-to-many relationship with Task
 }
 
