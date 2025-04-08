@@ -30,3 +30,5 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 	u.Password = hashedPassword
 	return nil
 }
+
+

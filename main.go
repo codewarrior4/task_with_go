@@ -3,17 +3,18 @@ package main
 import (
 	"log"
 
-	"github.com/gofiber/fiber/v2"
 	"task/config"
 	"task/database"
-	"task/utils"
 	"task/routes"
+	"task/utils"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
 	// Initialize the database
 
-	
+	config.LoadEnv()
 	config.ConnectDB()
 
 	// Migrate the database
@@ -38,7 +39,7 @@ func main() {
 	routes.SetupRoutes(app)
 
 	// Start the server
-	if err := app.Listen(":4021"); err != nil {
+	if err := app.Listen(":4023"); err != nil {
 		log.Fatal(err)
 	}
 }

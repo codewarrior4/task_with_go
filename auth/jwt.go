@@ -1,30 +1,31 @@
 package auth
 
 import (
+	"fmt"
 	"os"
-	"time"
 	"strconv"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 
 func GenerateJWT(userID uint) (string, error) {
-	jwtSecret := os.Getenv("JWT_SECRET")
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return "", fmt.Errorf("JWT secret is not set")
+	}
 
-	// Define token expiration time (e.g., 1 hour)
-	expirationTime := time.Now().Add(1 * time.Hour)
+	expiration := time.Now().Add(1 * time.Hour)
 
-	// Create the JWT claims
 	claims := &jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(expirationTime),
+		ExpiresAt: jwt.NewNumericDate(expiration),
 		Issuer:    "task-app",
 		Subject:   strconv.Itoa(int(userID)),
 	}
 
-	// Create JWT token with claims and secret key
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(jwtSecret))
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
+	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", err
 	}

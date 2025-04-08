@@ -18,4 +18,5 @@ func SetupAuthRoutes(app *fiber.App) {
 	auth.Post("/forgot-password", middlewares.RateLimiter(5), handlers.ForgotPassword) // 10 requests per 5 min
 	auth.Post("/reset-password", middlewares.RateLimiter(5), handlers.ResetPassword)
 	auth.Post("/change-password", middlewares.RateLimiter(3), handlers.ChangePassword)
+	auth.Post("/verify-code", middlewares.RateLimiter(30), handlers.VerifyCode)
 }
