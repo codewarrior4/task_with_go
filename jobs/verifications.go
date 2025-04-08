@@ -1,37 +1,36 @@
 package jobs
 
 import (
-	"fmt"
 	"log"
 	"time"
-
+	"github.com/robfig/cron/v3"
 	"task/config"
 	"task/models"
+
 )
 
 func StartVerificationCleanup() {
-	go func() {
-		for {
-			fmt.Println("🧹 [Verification Job] Running cleanup at:", time.Now().Format(time.RFC1123))
+	c := cron.New()
 
-			// Delete expired verification codes
-			cleanupExpiredVerifications()
+	// Runs every 20 minutes
+	_, err := c.AddFunc("@every 20m", cleanupExpiredVerifications)
+	if err != nil {
+		log.Fatal("❌ Failed to schedule verification cleanup:", err)
+	}
 
-			// Wait for the next run
-			time.Sleep(20 * time.Minute)
-		}
-	}()
+	c.Start()
+	log.Println("🔁 Started verification cleanup job with robfig/cron")
 }
 
 func cleanupExpiredVerifications() {
-	db := config.DB
+	log.Println("🧹 Running expired verification cleanup at", time.Now())
 
+	db := config.DB
 	result := db.Where("expires_at < ?", time.Now()).Delete(&models.Verification{})
 
 	if result.Error != nil {
-		log.Println("❌ Failed to delete expired verifications:", result.Error)
-		return
+		log.Println("❌ Failed to clean expired verifications:", result.Error)
+	} else {
+		log.Printf("✅ Deleted %d expired verifications\n", result.RowsAffected)
 	}
-
-	log.Printf("✅ Deleted %d expired verification codes\n", result.RowsAffected)
 }

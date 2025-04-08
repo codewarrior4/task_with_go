@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 // Task model for the tasks table
 type Task struct {
@@ -10,5 +14,7 @@ type Task struct {
 	UserID      uint // Foreign key linking to User model
 	User        User  // Association with User
 	IsCompleted bool
+	DueDate     *time.Time     // Optional due date
 	Image       string
+	DeletedAt   gorm.DeletedAt `gorm:"index"` // Enables soft deletes
 }
