@@ -7,23 +7,24 @@ import (
 	"task/database"
 	"task/routes"
 	"task/utils"
+	"task/jobs"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
-	// Initialize the database
-
+	// Load env and connect to DB
 	config.LoadEnv()
 	config.ConnectDB()
 
-	// Migrate the database
-	database.Migrate()
+	// Start the scheduler in the background
+	jobs.StartVerificationCleanup()
 
-	// Run my seeders
+	// Migrate and seed
+	database.Migrate()
 	database.Seed()
 
-	// Create a new Fiber instance
+	// Setup Fiber app
 	appConfig := fiber.Config{
 		AppName:           "Task Manager",
 		CaseSensitive:     true,
@@ -35,11 +36,16 @@ func main() {
 	// Middleware
 	app.Use(utils.Logger())
 
-	// Setup routes
+	// Routes
 	routes.SetupRoutes(app)
 
-	// Start the server
-	if err := app.Listen(":4023"); err != nil {
-		log.Fatal(err)
-	}
+	// Start the server in a goroutine so it doesn't block the main thread
+	go func() {
+		if err := app.Listen(":4023"); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	// 👇 Block forever so your background job keeps running
+	select {}
 }
