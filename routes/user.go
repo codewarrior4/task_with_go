@@ -16,7 +16,7 @@ func SetupUserRoutes(app *fiber.App) {
 	tasks := api.Group("/tasks", middlewares.AuthMiddleware())
 
 	tasks.Get("", handlers.GetTasks)                   // Get all tasks (with optional pagination/filtering)
-	// tasks.Get("/:id", handlers.GetTask)                 // Get one task
+	tasks.Get("/:id", handlers.GetTaskByID)                 // Get one task
 	// tasks.Post("/", handlers.CreateTask)               // Create one task
 	// tasks.Post("/bulk", handlers.CreateTasksBulk)      // Create multiple tasks
 	// tasks.Put("/:id", handlers.UpdateTask)             // Update a task

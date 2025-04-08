@@ -8,6 +8,7 @@ import (
 
 	"task/config"
 	"task/models"
+	"task/utils"
 )
 
 func GetTasks(c *fiber.Ctx) error {
@@ -48,16 +49,34 @@ func GetTasks(c *fiber.Ctx) error {
 		Find(&tasks).Error
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to fetch tasks",
-		})
+		 return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to fetch tasks", err.Error())
 	}
 
-	return c.JSON(fiber.Map{
+	return utils.SuccessResponse(c,fiber.StatusOK, "Fetched Tasks", fiber.Map{
 		"data":       tasks,
 		"total":      total,
 		"page":       page,
 		"per_page":   limit,
 		"total_page": int(math.Ceil(float64(total) / float64(limit))),
 	})
+}
+
+// GetTaskByID fetches a single task by its ID
+func GetTaskByID(c *fiber.Ctx) error {
+	// Extract the task ID from the URL
+	taskIDStr := c.Params("id")
+	taskID, err := strconv.ParseUint(taskIDStr, 10, 64)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid task ID", err)
+	}
+
+	// Fetch the task from the database
+	var task models.Task
+	err = config.DB.First(&task, taskID).Error
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusNotFound, "Task not found", err)
+	}
+
+	// Return the task as a JSON response
+	return utils.SuccessResponse(c, fiber.StatusOK, "Fetched Task", task)
 }

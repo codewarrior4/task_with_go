@@ -3,10 +3,11 @@ package utils
 import (
 	"bytes"
 	"fmt"
+	"html/template"
 	"log"
 	"net/smtp"
-	"html/template"
 	"time"
+	"task/config"
 )
 
 // EmailConfig holds email sender configurations
@@ -16,10 +17,11 @@ var EmailConfig = struct {
 	SenderEmail string
 	SenderPass  string
 }{
-	SMTPHost:    "sandbox.smtp.mailtrap.io", // Replace with your SMTP host
-	SMTPPort:    "2525",              // Replace with your SMTP port
-	SenderEmail: "e9d995191147fd", // Replace with your sender email
-	SenderPass:  "55e4867f39369c",    // Replace with your sender password
+	SMTPHost:    config.GetEnv("SMTP_HOST", "sandbox.smtp.mailtrap.io"),  // Add a default value
+	SMTPPort:    config.GetEnv("SMTP_PORT", "2525"),  // Add a default value
+	SenderEmail: config.GetEnv("SMTP_USER", "e9d995191147fd"), // Add a default value
+	SenderPass:  config.GetEnv("SMTP_PASS", "55e4867f39369c"),  // Add a default value
+	
 }
 
 // EmailData holds dynamic email content
