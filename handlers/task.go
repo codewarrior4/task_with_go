@@ -1,8 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"math"
+	"mime/multipart"
+	"os"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -14,7 +20,7 @@ import (
 func GetTasks(c *fiber.Ctx) error {
 	db := config.DB
 	userIDStr := c.Locals("userID").(string)
-	userID, _ := strconv.ParseUint(userIDStr, 10, 64) 
+	userID, _ := strconv.ParseUint(userIDStr, 10, 64)
 
 	// Pagination
 	page, _ := strconv.Atoi(c.Query("page", "1"))
@@ -49,10 +55,10 @@ func GetTasks(c *fiber.Ctx) error {
 		Find(&tasks).Error
 
 	if err != nil {
-		 return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to fetch tasks", err.Error())
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to fetch tasks", err.Error())
 	}
 
-	return utils.SuccessResponse(c,fiber.StatusOK, "Fetched Tasks", fiber.Map{
+	return utils.SuccessResponse(c, fiber.StatusOK, "Fetched Tasks", fiber.Map{
 		"data":       tasks,
 		"total":      total,
 		"page":       page,
@@ -79,4 +85,99 @@ func GetTaskByID(c *fiber.Ctx) error {
 
 	// Return the task as a JSON response
 	return utils.SuccessResponse(c, fiber.StatusOK, "Fetched Task", task)
+}
+
+func CreateTask(c *fiber.Ctx) error {
+	// Struct for task input validation
+	type CreateTaskInput struct {
+		Title       string    `json:"title" validate:"required"`
+		Description string    `json:"description" validate:"required"`
+		DueDate     string `json:"due_date" validate:"required"`
+	}
+
+	var input CreateTaskInput
+
+	// Parse request body
+	if err := c.BodyParser(&input); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Failed to parse request body", err.Error())
+	}
+
+	// Validate input fields
+	if err := utils.ValidateStruct(input); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid input", err)
+	}
+
+	// Get userID from context
+	userIDStr := c.Locals("userID").(string)
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid user ID", err.Error())
+	}
+
+	parsedDate, err := time.Parse("2006-01-02", input.DueDate)
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid due date format. Use YYYY-MM-DD", err.Error())
+	}
+
+
+	// Handle file upload
+	file, err := c.FormFile("image")
+	if err != nil || file.Size == 0 {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Image file is required", "No file was uploaded or file is empty")
+	}
+	// Validate file type (only image/jpeg, image/png)
+	if err := validateImageFile(file); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "Invalid file type", err.Error())
+	}
+	if file.Size > 2*1024*1024 {
+		return utils.ErrorResponse(c, fiber.StatusBadRequest, "File too large", "Maximum allowed size is 2MB")
+	}
+
+	// Create folder if it does not exist
+	imageFolder := "./uploads/images"
+	if err := os.MkdirAll(imageFolder, os.ModePerm); err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to create image folder", err.Error())
+	}
+
+	// Generate a unique filename
+	timestamp := time.Now().UnixNano()
+	ext := filepath.Ext(file.Filename)
+	ext = strings.ToLower(ext)
+	fileName := fmt.Sprintf("%d%s", timestamp, ext)
+
+	// Save the file to the specified folder
+	err = c.SaveFile(file, fmt.Sprintf("%s/%s", imageFolder, fileName))
+	if err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to save file", err.Error())
+	}
+
+	// Create the task in the database
+	task := models.Task{
+		Title:       input.Title,
+		Description: input.Description,
+		DueDate:     &parsedDate, // DueDate is passed as a pointer to time.Time
+		Image:       fileName,       // Save the filename in the database
+		UserID:      uint(userID),   // Convert userID to uint
+	}
+
+	// Insert the task into the database
+	if err := config.DB.Create(&task).Error; err != nil {
+		return utils.ErrorResponse(c, fiber.StatusInternalServerError, "Failed to create task", err.Error())
+	}
+
+	return utils.SuccessResponse(c, fiber.StatusCreated, "Task created successfully", task)
+}
+
+// validateImageFile checks if the uploaded file is an image (jpeg/png)
+func validateImageFile(file *multipart.FileHeader) error {
+	allowedTypes := []string{"image/jpeg", "image/png"}
+	fileType := file.Header.Get("Content-Type")
+
+	// Check if the file's MIME type is in the allowed types
+	for _, validType := range allowedTypes {
+		if fileType == validType {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid file type: %s", fileType)
 }

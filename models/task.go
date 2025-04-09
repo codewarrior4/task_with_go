@@ -1,6 +1,9 @@
 package models
 
 import (
+	"encoding/json"
+	"fmt"
+	"task/config"
 	"time"
 
 	"gorm.io/gorm"
@@ -17,4 +20,19 @@ type Task struct {
 	DueDate     *time.Time     // Optional due date
 	Image       string
 	DeletedAt   gorm.DeletedAt `gorm:"index"` // Enables soft deletes
+}
+
+
+func (t *Task) MarshalJSON() ([]byte, error) {
+	type Alias Task // avoid recursion
+
+	baseURL := config.GetEnv("APP_URL", "http://localhost:4023")
+
+	return json.Marshal(&struct {
+		*Alias
+		ImageURL string `json:"image_url"`
+	}{
+		Alias:    (*Alias)(t),
+		ImageURL: fmt.Sprintf("%s/uploads/images/%s", baseURL, t.Image),
+	})
 }
