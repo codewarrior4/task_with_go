@@ -2,7 +2,7 @@
 FROM golang:1.23-alpine AS builder
 
 # Set the Current Working Directory inside the container
-WORKDIR /app
+WORKDIR /task
 
 # Copy the Go Modules manifests
 COPY go.mod go.sum ./
@@ -26,7 +26,7 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 # Copy the pre-built binary from the previous stage
-COPY --from=builder /app/main .
+COPY --from=builder /task/main .
 
 # Expose port the app runs on
 EXPOSE 4023
