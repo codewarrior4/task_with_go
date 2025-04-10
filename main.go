@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-
+	"net/http"
 	"task/config"
 	"task/database"
 	"task/routes"
@@ -41,9 +41,13 @@ func main() {
 
 	// Start the server in a goroutine so it doesn't block the main thread
 	go func() {
-		if err := app.Listen(":4023"); err != nil {
-			log.Fatal(err)
-		}
+		// if err := app.Listen(":4023"); err != nil {
+		// 	log.Fatal(err)
+		// }
+		port := config.GetEnv("DB_PORT", "")
+		 
+		http.ListenAndServe("0.0.0.0:"+port, nil)
+
 	}()
 
 	// 👇 Block forever so your background job keeps running
