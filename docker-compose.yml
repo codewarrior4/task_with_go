@@ -6,10 +6,10 @@ services:
     image: mysql:8.0
     container_name: taskdb
     environment:
-      MYSQL_ROOT_PASSWORD: codewarx   # Set your MySQL root password here
-      MYSQL_DATABASE: task  # Name of the database to create
-      MYSQL_USER: codewarrior  # MySQL user
-      MYSQL_PASSWORD: codewarx  # MySQL user password
+      MYSQL_ROOT_PASSWORD: PSUsHLdSwfhbNoqFoEBLTNmDruqavlTd   # Set your MySQL root password here
+      MYSQL_DATABASE: railway  # Name of the database to create
+      MYSQL_USER: root  # MySQL user
+      MYSQL_PASSWORD: PSUsHLdSwfhbNoqFoEBLTNmDruqavlTd  # MySQL user password
     ports:
       - "3307:3306"  # Expose MySQL port (on your host machine)
     volumes:
