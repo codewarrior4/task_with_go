@@ -46,7 +46,7 @@ func main() {
 		// }
 		port := config.GetEnv("DB_PORT", "")
 		 
-		http.ListenAndServe("0.0.0.0:"+port, nil)
+		app.Listen("0.0.0.0:"+port)
 
 	}()
 
