@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	// "log"
 	"net/http"
 	"task/config"
 	"task/database"
@@ -46,7 +46,7 @@ func main() {
 		// }
 		port := config.GetEnv("DB_PORT", "")
 		 
-		app.Listen("0.0.0.0:"+port)
+		http.ListenAndServe("0.0.0.0:"+port, nil)
 
 	}()
 
