@@ -19,7 +19,6 @@ type Task struct {
 	IsCompleted bool
 	DueDate     *time.Time     // Optional due date
 	Image       string
-	DeletedAt   gorm.DeletedAt `gorm:"index"` // Enables soft deletes
 }
 
 

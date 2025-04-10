@@ -11,9 +11,11 @@ services:
       MYSQL_USER: codewarrior  # MySQL user
       MYSQL_PASSWORD: codewarx  # MySQL user password
     ports:
-      - "3306:3306"  # Expose MySQL port (on your host machine)
+      - "3307:3306"  # Expose MySQL port (on your host machine)
     volumes:
-      - mysql-data:/var/lib/mysql  # Persist data across container restarts
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    # Persist data across container restarts
 
   # Your Go application service (app will be connected to db)
   app:
@@ -23,12 +25,10 @@ services:
     container_name: taskapp
     ports:
       - "4023:4023"  # Expose your app port
-    environment:
-      - DB_HOST=db  # Connect to db service
-      - DB_PORT=3306
-      - DB_USER=codewarrior
-      - DB_PASS=codewarx
-      - DB_NAME=task
+
+    env_file:
+      - .env
+      
     depends_on:
       - db  # Ensure db starts before your app
 

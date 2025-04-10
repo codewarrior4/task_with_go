@@ -1,13 +1,14 @@
-# Use the official Golang image as the base
+# Stage 1: Build the Go binary
 FROM golang:1.23-alpine AS builder
 
-# Set the Current Working Directory inside the container
+# Set the working directory inside the container
 WORKDIR /task
 
-# Copy the Go Modules manifests
-COPY go.mod go.sum ./
+# Install required packages (bash + ca-certificates for HTTPS)
+RUN apk --no-cache add ca-certificates bash netcat-openbsd
 
-# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
+# Copy Go module files and download dependencies
+COPY go.mod go.sum ./
 RUN go mod tidy
 
 # Copy the source code into the container
@@ -16,20 +17,22 @@ COPY . .
 # Build the Go app
 RUN go build -o main .
 
-# Start a new stage from a smaller base image
-FROM alpine:latest  
+# Stage 2: Minimal runtime image
+FROM alpine:latest
 
-# Install necessary dependencies (if any, e.g., ca-certificates)
-RUN apk --no-cache add ca-certificates
+# Install required packages (bash + ca-certificates for HTTPS)
+RUN apk --no-cache add ca-certificates bash
 
-# Set the Current Working Directory inside the container
+# Set working directory
 WORKDIR /root/
 
-# Copy the pre-built binary from the previous stage
+# Copy binary and wait script
 COPY --from=builder /task/main .
+COPY wait-for-db.sh /wait-for-db.sh
+RUN chmod +x /wait-for-db.sh
 
-# Expose port the app runs on
+# Expose the app port
 EXPOSE 4023
 
-# Command to run the executable
-CMD ["./main"]
+# Run the app after ensuring DB is up
+CMD ["/wait-for-db.sh", "db:3306", "--", "./main"]

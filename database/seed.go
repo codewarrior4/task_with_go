@@ -31,19 +31,19 @@ func Seed() {
 			log.Fatal("Failed to seed user: ", err)
 		}
 		log.Println("User seeded successfully!")
-		// Create sample tasks for the user
-		task1 := models.Task{Title: "Task 1", Description: "First task", UserID: user.ID}
-		task2 := models.Task{Title: "Task 2", Description: "Second task", UserID: user.ID}
+		// // Create sample tasks for the user
+		// task1 := models.Task{Title: "Task 1", Description: "First task", UserID: user.ID}
+		// task2 := models.Task{Title: "Task 2", Description: "Second task", UserID: user.ID}
 
-		// // Add tasks to the database
-		if err := config.DB.Create(&task1).Error; err != nil {
-			log.Fatal("Failed to seed task 1: ", err)
-		}
-		if err := config.DB.Create(&task2).Error; err != nil {
-			log.Fatal("Failed to seed task 2: ", err)
-		}
+		// // // Add tasks to the database
+		// if err := config.DB.Create(&task1).Error; err != nil {
+		// 	log.Fatal("Failed to seed task 1: ", err)
+		// }
+		// if err := config.DB.Create(&task2).Error; err != nil {
+		// 	log.Fatal("Failed to seed task 2: ", err)
+		// }
 
-		log.Println("Tasks seeded successfully!")
+		// log.Println("Tasks seeded successfully!")
 	} else {
 		user = existingUser // Assign the existing user to user
 		log.Println("User already exists, skipping seed.")
