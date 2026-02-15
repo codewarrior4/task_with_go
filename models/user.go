@@ -9,7 +9,6 @@ import (
 
 // User model for the users table
 type User struct {
-	gorm.Model
 	Username string `gorm:"unique;not null"`
 	Firstname string `gorm:"not null"`
 	Lastname string `gorm:"not null"`
@@ -17,6 +16,7 @@ type User struct {
 	Password string `gorm:"not null"`
 	IsVerified bool `gorm:"default:false" json:"is_verified"`
 	Tasks    []Task `gorm:"foreignKey:UserID"` // One-to-many relationship with Task
+	gorm.Model
 }
 
 
